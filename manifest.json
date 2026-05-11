@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "LLM Smart Autofill",
+  "version": "0.1.0",
+  "description": "Use an LLM to map profile and resume data to forms, then preview and fill fields.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": ["https://api.openai.com/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LLM 自动填表"
+  },
+  "options_page": "profile.html"
+}

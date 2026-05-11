@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>自动填表日志</title>
+    <link rel="stylesheet" href="logs.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>自动填表日志</h1>
+          <p>日志只保存在 Chrome 本地扩展存储中，最多保留最近 30 次。</p>
+        </div>
+        <div class="actions">
+          <button id="exportLogs" class="secondary">导出 JSON</button>
+          <button id="clearLogs" class="danger">清空日志</button>
+        </div>
+      </header>
+      <section id="logList" class="log-list"></section>
+    </main>
+    <script type="module" src="logs.js"></script>
+  </body>
+</html>

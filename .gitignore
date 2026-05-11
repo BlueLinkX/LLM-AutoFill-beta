@@ -1,0 +1,17 @@
+# Local secrets and personal data
+profile.local.json
+*.local.json
+*.private.json
+.env
+.env.*
+
+# Generated packages
+*.zip
+dist/
+build/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

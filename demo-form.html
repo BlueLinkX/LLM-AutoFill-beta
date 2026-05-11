@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>自动填表测试页</title>
+    <style>
+      :root {
+        font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+        color: #172033;
+        background: #f7f8fb;
+      }
+      body {
+        margin: 0;
+      }
+      main {
+        width: min(920px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0 64px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      p {
+        margin: 0 0 24px;
+        color: #667085;
+      }
+      form {
+        display: grid;
+        gap: 18px;
+      }
+      section {
+        padding: 22px;
+        border: 1px solid #dbe3f0;
+        border-radius: 8px;
+        background: #fff;
+      }
+      h2 {
+        margin: 0 0 16px;
+        font-size: 18px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+      label,
+      fieldset {
+        display: block;
+        margin: 0 0 14px;
+      }
+      label span,
+      legend {
+        display: block;
+        margin-bottom: 6px;
+        color: #344054;
+        font-size: 13px;
+        font-weight: 650;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 10px 11px;
+        border: 1px solid #ccd5e3;
+        border-radius: 7px;
+        font: inherit;
+      }
+      fieldset {
+        padding: 0;
+        border: 0;
+      }
+      .choice {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-right: 16px;
+      }
+      .choice input {
+        width: auto;
+      }
+      button {
+        width: 180px;
+        padding: 11px 14px;
+        border: 0;
+        border-radius: 7px;
+        background: #1f5eff;
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>自动填表测试页</h1>
+      <p>用于测试 Chrome 扩展的字段识别、LLM 映射和自动填入。</p>
+
+      <form>
+        <section>
+          <h2>购物配送信息</h2>
+          <div class="grid">
+            <label>
+              <span>收件人姓名</span>
+              <input name="shipping_name" autocomplete="name">
+            </label>
+            <label>
+              <span>联系电话</span>
+              <input name="shipping_phone" autocomplete="tel">
+            </label>
+            <label>
+              <span>电子邮箱</span>
+              <input name="email" type="email" autocomplete="email">
+            </label>
+            <label>
+              <span>邮政编码</span>
+              <input name="postal_code" autocomplete="postal-code">
+            </label>
+            <label>
+              <span>国家或地区</span>
+              <select name="country">
+                <option value="">请选择</option>
+                <option>Japan</option>
+                <option>China</option>
+                <option>United States</option>
+              </select>
+            </label>
+            <label>
+              <span>城市</span>
+              <input name="city" autocomplete="address-level2">
+            </label>
+          </div>
+          <label>
+            <span>详细地址</span>
+            <textarea name="address" rows="3"></textarea>
+          </label>
+        </section>
+
+        <section>
+          <h2>职位申请信息</h2>
+          <div class="grid">
+            <label>
+              <span>申请职位</span>
+              <input name="role" placeholder="例如 Software Engineer">
+            </label>
+            <label>
+              <span>可入职时间</span>
+              <input name="availability">
+            </label>
+            <label>
+              <span>期望工作地点</span>
+              <input name="preferred_location">
+            </label>
+            <label>
+              <span>工作许可状态</span>
+              <select name="work_auth">
+                <option value="">请选择</option>
+                <option>Authorized to work in Japan</option>
+                <option>Need visa sponsorship</option>
+                <option>Not sure</option>
+              </select>
+            </label>
+          </div>
+          <fieldset>
+            <legend>是否接受远程工作</legend>
+            <label class="choice"><input type="radio" name="remote" value="Yes">Yes</label>
+            <label class="choice"><input type="radio" name="remote" value="No">No</label>
+            <label class="choice"><input type="radio" name="remote" value="Hybrid">Hybrid</label>
+          </fieldset>
+          <label>
+            <span>技能摘要</span>
+            <textarea name="skills" rows="3"></textarea>
+          </label>
+          <label>
+            <span>请简短说明你为什么适合这个岗位</span>
+            <textarea name="cover_note" rows="5"></textarea>
+          </label>
+          <label class="choice">
+            <input type="checkbox" name="confirm">
+            我确认以上信息真实准确
+          </label>
+        </section>
+
+        <button type="button">测试按钮</button>
+      </form>
+    </main>
+  </body>
+</html>
