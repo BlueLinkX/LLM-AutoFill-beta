@@ -15,6 +15,11 @@ body {
   background: #f7f8fb;
 }
 
+body.sidepanel-body {
+  width: auto;
+  min-height: 100vh;
+}
+
 button,
 input {
   font: inherit;
@@ -22,6 +27,11 @@ input {
 
 .popup {
   padding: 16px;
+}
+
+.sidepanel-body .popup {
+  max-width: 460px;
+  padding: 20px;
 }
 
 .topbar {
@@ -74,6 +84,10 @@ h2 {
   margin-bottom: 12px;
 }
 
+.quick-action {
+  margin-bottom: 12px;
+}
+
 button {
   border: 0;
   border-radius: 7px;
@@ -108,6 +122,10 @@ button:disabled {
 .wide {
   width: 100%;
   margin-top: 12px;
+}
+
+.top-action {
+  margin-top: 0;
 }
 
 .status {

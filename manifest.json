@@ -1,17 +1,22 @@
 {
   "manifest_version": 3,
   "name": "LLM Smart Autofill",
-  "version": "0.1.0",
-  "description": "Use an LLM to map profile and resume data to forms, then preview and fill fields.",
+  "version": "0.2.0",
+  "description": "Use LLMs from common API providers to map your saved profile and resume data to web forms.",
   "permissions": ["activeTab", "scripting", "storage", "tabs"],
-  "host_permissions": ["https://api.openai.com/*"],
+  "host_permissions": [
+    "https://api.openai.com/*",
+    "https://openrouter.ai/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.anthropic.com/*"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "LLM 自动填表"
+    "default_title": "LLM Smart Autofill"
   },
   "options_page": "profile.html"
 }

@@ -1,16 +1,31 @@
-import { getLocalDefaultProfile } from "./defaults.js";
+import {
+  getLocalDefaultProfile,
+  normalizeApiKeys,
+  normalizeSettings
+} from "./defaults.js";
+import { setDocumentLanguage, t } from "./i18n.js";
 
 const state = {
   tab: null,
   fields: [],
-  plan: null
+  plan: null,
+  usage: null,
+  settings: normalizeSettings()
 };
 
 const elements = {
+  appTitle: document.getElementById("appTitle"),
   setupState: document.getElementById("setupState"),
   status: document.getElementById("status"),
   fieldCount: document.getElementById("fieldCount"),
   actionCount: document.getElementById("actionCount"),
+  fieldsLabel: document.getElementById("fieldsLabel"),
+  suggestionsLabel: document.getElementById("suggestionsLabel"),
+  usageLabel: document.getElementById("usageLabel"),
+  usageText: document.getElementById("usageText"),
+  notesTitle: document.getElementById("notesTitle"),
+  previewTitle: document.getElementById("previewTitle"),
+  quickAutofill: document.getElementById("quickAutofill"),
   scanPage: document.getElementById("scanPage"),
   generatePlan: document.getElementById("generatePlan"),
   applyPlan: document.getElementById("applyPlan"),
@@ -21,95 +36,102 @@ const elements = {
   notesSection: document.getElementById("notesSection"),
   notes: document.getElementById("notes"),
   selectHighConfidence: document.getElementById("selectHighConfidence"),
-  usageSection: document.getElementById("usageSection"),
-  usageText: document.getElementById("usageText")
+  usageSection: document.getElementById("usageSection")
 };
 
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
+  await loadSettings();
+  applyStaticText();
+
   elements.openProfile.addEventListener("click", () => chrome.runtime.openOptionsPage());
   elements.openLogs.addEventListener("click", () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("logs.html") });
   });
+  elements.quickAutofill.addEventListener("click", quickAutofill);
   elements.scanPage.addEventListener("click", scanCurrentPage);
   elements.generatePlan.addEventListener("click", generatePlan);
   elements.applyPlan.addEventListener("click", applyPlan);
   elements.selectHighConfidence.addEventListener("click", selectHighConfidence);
 
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  state.tab = tab;
+  await refreshActiveTab();
 
   await refreshSetupState();
+  setStatus(t(state.settings.uiLanguage, "openPageFirst"));
+}
+
+async function loadSettings() {
+  const { settings } = await chrome.storage.local.get("settings");
+  state.settings = normalizeSettings(settings);
+  setDocumentLanguage(state.settings.uiLanguage);
+}
+
+function applyStaticText() {
+  const lang = state.settings.uiLanguage;
+  document.title = t(lang, "appName");
+  elements.appTitle.textContent = t(lang, "appName");
+  elements.openLogs.title = t(lang, "logs");
+  elements.openProfile.title = t(lang, "settings");
+  elements.quickAutofill.textContent = t(lang, "quickAutofill");
+  elements.scanPage.textContent = t(lang, "scanFields");
+  elements.generatePlan.textContent = t(lang, "generatePlan");
+  elements.applyPlan.textContent = t(lang, "fillSelectedFields");
+  elements.selectHighConfidence.textContent = t(lang, "highConfidenceOnly");
+  elements.fieldsLabel.textContent = t(lang, "fields");
+  elements.suggestionsLabel.textContent = t(lang, "suggestions");
+  elements.usageLabel.textContent = t(lang, "tokenUsage");
+  elements.notesTitle.textContent = t(lang, "notes");
+  elements.previewTitle.textContent = t(lang, "fillPreview");
+  if (!state.plan) {
+    elements.setupState.textContent = t(lang, "checkingConfig");
+  }
 }
 
 async function refreshSetupState() {
-  const { apiKey, profile } = await chrome.storage.local.get(["apiKey", "profile"]);
-  const hasKey = Boolean(apiKey);
-  const activeProfile = profile || await getLocalDefaultProfile();
+  const { apiKey, apiKeys, profile, settings } = await chrome.storage.local.get([
+    "apiKey",
+    "apiKeys",
+    "profile",
+    "settings"
+  ]);
+
+  state.settings = normalizeSettings(settings);
+  setDocumentLanguage(state.settings.uiLanguage);
+
+  const normalizedApiKeys = normalizeApiKeys(apiKeys, apiKey);
+  const hasKey = Boolean(normalizedApiKeys[state.settings.provider]);
+  const activeProfile =
+    profile && Object.values(flatten(profile)).some((value) => String(value || "").trim())
+      ? profile
+      : await getLocalDefaultProfile();
   const hasProfile = Object.values(flatten(activeProfile)).some((value) => String(value || "").trim());
+  const lang = state.settings.uiLanguage;
+
+  applyStaticText();
 
   if (hasKey && hasProfile) {
-    elements.setupState.textContent = "配置已就绪";
+    elements.setupState.textContent = t(lang, "configReady");
   } else if (!hasKey && !hasProfile) {
-    elements.setupState.textContent = "需要配置 API Key 和个人资料";
+    elements.setupState.textContent = t(lang, "needKeyAndProfile");
   } else if (!hasKey) {
-    elements.setupState.textContent = "需要配置 API Key";
+    elements.setupState.textContent = t(lang, "needKey");
   } else {
-    elements.setupState.textContent = "需要填写个人资料";
+    elements.setupState.textContent = t(lang, "needProfile");
   }
 }
 
 async function scanCurrentPage() {
-  await runWithStatus("正在扫描当前页面字段...", async () => {
-    await ensureContentScript();
-    const response = await chrome.tabs.sendMessage(state.tab.id, { type: "GET_FORM_FIELDS" });
-    if (!response?.ok) {
-      throw new Error(response?.error || "字段扫描失败。");
-    }
-    state.fields = response.fields || [];
-    state.plan = null;
-    state.usage = null;
-    renderCounts();
-    renderUsage();
-    renderPlan();
-    setStatus(`发现 ${state.fields.length} 个可填写字段。`);
+  await runWithStatus(t(state.settings.uiLanguage, "scanning"), async () => {
+    await scanFieldsInternal();
+    setStatus(t(state.settings.uiLanguage, "foundFields", { count: state.fields.length }));
   });
 }
 
 async function generatePlan() {
-  await runWithStatus("正在生成填表方案...", async () => {
-    await ensureContentScript();
-
-    if (!state.fields.length) {
-      const response = await chrome.tabs.sendMessage(state.tab.id, { type: "GET_FORM_FIELDS" });
-      if (!response?.ok) {
-        throw new Error(response?.error || "字段扫描失败。");
-      }
-      state.fields = response.fields || [];
-    }
-
-    if (!state.fields.length) {
-      throw new Error("当前页面没有发现可填写字段。");
-    }
-
-    const response = await chrome.runtime.sendMessage({
-      type: "GENERATE_FILL_PLAN",
-      tabId: state.tab.id,
-      fields: state.fields
-    });
-
-    if (!response?.ok) {
-      throw new Error(response?.error || "生成失败。");
-    }
-
-    state.plan = response.plan;
-    state.usage = response.usage || null;
-    await saveClientLog(response.logEntry);
-    renderCounts();
-    renderUsage();
-    renderPlan();
-    setStatus(`已生成 ${state.plan.actions.length} 条填表建议。`);
+  await runWithStatus(t(state.settings.uiLanguage, "generating"), async () => {
+    await generatePlanInternal();
+    setStatus(t(state.settings.uiLanguage, "generatedSuggestions", { count: state.plan.actions.length }));
   });
 }
 
@@ -132,39 +154,122 @@ async function saveClientLog(logEntry) {
 }
 
 async function applyPlan() {
-  await runWithStatus("正在填入选中字段...", async () => {
-    await ensureContentScript();
-    const actions = getSelectedActions();
-    if (!actions.length) {
-      throw new Error("没有选中的填表项。");
+  await runWithStatus(t(state.settings.uiLanguage, "applying"), async () => {
+    const filled = await applySelectedInternal();
+    setStatus(
+      t(state.settings.uiLanguage, "fillResult", {
+        filled,
+        total: getSelectedActions().length
+      })
+    );
+  });
+}
+
+async function quickAutofill() {
+  await runWithStatus(t(state.settings.uiLanguage, "quickAutofillRunning"), async () => {
+    await scanFieldsInternal();
+    await generatePlanInternal();
+    const selectedActions = getSelectedActions();
+    if (!selectedActions.length) {
+      throw new Error(t(state.settings.uiLanguage, "noSelectedActions"));
     }
-
-    const response = await chrome.tabs.sendMessage(state.tab.id, {
-      type: "FILL_FORM_FIELDS",
-      actions
-    });
-
-    if (!response?.ok) {
-      throw new Error(response?.error || "填入失败。");
-    }
-
-    const filled = (response.result || []).filter((item) => item.filled).length;
-    setStatus(`已填入 ${filled}/${actions.length} 个字段，请在网页上检查后再提交。`);
+    const filled = await applyActionsInternal(selectedActions);
+    setStatus(
+      t(state.settings.uiLanguage, "quickAutofillDone", {
+        filled,
+        total: selectedActions.length
+      })
+    );
   });
 }
 
 async function ensureContentScript() {
   if (!state.tab?.id) {
-    throw new Error("找不到当前标签页。");
+    throw new Error(t(state.settings.uiLanguage, "missingTab"));
   }
   if (/^(chrome|edge|about):\/\//i.test(state.tab.url || "")) {
-    throw new Error("浏览器内部页面不能注入扩展脚本，请打开普通网页或本地测试页。");
+    throw new Error(t(state.settings.uiLanguage, "unsupportedPage"));
   }
 
   await chrome.scripting.executeScript({
     target: { tabId: state.tab.id },
     files: ["content.js"]
   });
+}
+
+async function refreshActiveTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  state.tab = tab || null;
+}
+
+async function scanFieldsInternal() {
+  await refreshActiveTab();
+  await ensureContentScript();
+  const response = await chrome.tabs.sendMessage(state.tab.id, { type: "GET_FORM_FIELDS" });
+  if (!response?.ok) {
+    throw new Error(response?.error || t(state.settings.uiLanguage, "fieldScanFailed"));
+  }
+  state.fields = response.fields || [];
+  state.plan = null;
+  state.usage = null;
+  renderCounts();
+  renderUsage();
+  renderPlan();
+  return state.fields;
+}
+
+async function generatePlanInternal() {
+  await refreshActiveTab();
+  await ensureContentScript();
+
+  if (!state.fields.length) {
+    await scanFieldsInternal();
+  }
+
+  if (!state.fields.length) {
+    throw new Error(t(state.settings.uiLanguage, "noFieldsFound"));
+  }
+
+  const response = await chrome.runtime.sendMessage({
+    type: "GENERATE_FILL_PLAN",
+    tabId: state.tab.id,
+    fields: state.fields
+  });
+
+  if (!response?.ok) {
+    throw new Error(response?.error || t(state.settings.uiLanguage, "generationFailed"));
+  }
+
+  state.plan = response.plan;
+  state.usage = response.usage || null;
+  await saveClientLog(response.logEntry);
+  renderCounts();
+  renderUsage();
+  renderPlan();
+  return state.plan;
+}
+
+async function applySelectedInternal() {
+  const actions = getSelectedActions();
+  if (!actions.length) {
+    throw new Error(t(state.settings.uiLanguage, "noSelectedActions"));
+  }
+  return applyActionsInternal(actions);
+}
+
+async function applyActionsInternal(actions) {
+  await refreshActiveTab();
+  await ensureContentScript();
+  const response = await chrome.tabs.sendMessage(state.tab.id, {
+    type: "FILL_FORM_FIELDS",
+    actions
+  });
+
+  if (!response?.ok) {
+    throw new Error(response?.error || t(state.settings.uiLanguage, "fillFailed"));
+  }
+
+  return (response.result || []).filter((item) => item.filled).length;
 }
 
 function renderPlan() {
@@ -221,7 +326,11 @@ function renderUsage() {
   const input = usage.input_tokens ?? usage.prompt_tokens ?? 0;
   const output = usage.output_tokens ?? usage.completion_tokens ?? 0;
   const total = usage.total_tokens ?? input + output;
-  elements.usageText.textContent = `input ${input} / output ${output} / total ${total}`;
+  elements.usageText.textContent = t(state.settings.uiLanguage, "usageFormat", {
+    input,
+    output,
+    total
+  });
 }
 
 function getSelectedActions() {
@@ -267,6 +376,7 @@ async function runWithStatus(message, callback) {
 }
 
 function setBusy(busy) {
+  elements.quickAutofill.disabled = busy;
   elements.scanPage.disabled = busy;
   elements.generatePlan.disabled = busy;
   elements.applyPlan.disabled = busy;
@@ -282,7 +392,7 @@ function fieldLabel(field, action) {
   if (!field) {
     return action.fieldId;
   }
-  return `${action.fieldId} · ${field.label || field.placeholder || field.name || field.nearbyText || field.kind}`;
+  return `${action.fieldId} - ${field.label || field.placeholder || field.name || field.nearbyText || field.kind}`;
 }
 
 function flatten(value, prefix = "", output = {}) {

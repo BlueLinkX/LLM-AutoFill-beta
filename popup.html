@@ -1,59 +1,63 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LLM 自动填表</title>
+    <title>LLM Smart Autofill</title>
     <link rel="stylesheet" href="popup.css">
   </head>
   <body>
     <main class="popup">
       <header class="topbar">
         <div>
-          <h1>LLM 自动填表</h1>
-          <p id="setupState">检查配置中...</p>
+          <h1 id="appTitle">LLM Smart Autofill</h1>
+          <p id="setupState">Checking configuration...</p>
         </div>
         <div class="header-buttons">
-          <button id="openLogs" class="icon-button" title="日志">≡</button>
-          <button id="openProfile" class="icon-button" title="配置">⚙</button>
+          <button id="openLogs" class="icon-button" title="Logs">≡</button>
+          <button id="openProfile" class="icon-button" title="Settings">⚙</button>
         </div>
       </header>
 
-      <section class="actions">
-        <button id="scanPage" class="secondary">扫描字段</button>
-        <button id="generatePlan" class="primary">生成填表方案</button>
+      <section class="quick-action">
+        <button id="quickAutofill" class="primary wide top-action">One-click Autofill</button>
       </section>
 
-      <div id="status" class="status">打开一个包含表单的网页后开始。</div>
+      <section class="actions">
+        <button id="scanPage" class="secondary">Scan Fields</button>
+        <button id="generatePlan" class="primary">Generate Fill Plan</button>
+      </section>
+
+      <div id="status" class="status">Open a page with a form to begin.</div>
 
       <section class="summary">
         <div>
           <span class="metric" id="fieldCount">0</span>
-          <span>字段</span>
+          <span id="fieldsLabel">Fields</span>
         </div>
         <div>
           <span class="metric" id="actionCount">0</span>
-          <span>建议</span>
+          <span id="suggestionsLabel">Suggestions</span>
         </div>
       </section>
 
       <section id="usageSection" class="usage hidden">
-        <span>Token 用量</span>
+        <span id="usageLabel">Token usage</span>
         <strong id="usageText">-</strong>
       </section>
 
       <section id="notesSection" class="notes hidden">
-        <h2>备注</h2>
+        <h2 id="notesTitle">Notes</h2>
         <ul id="notes"></ul>
       </section>
 
       <section id="previewSection" class="preview hidden">
         <div class="section-title">
-          <h2>填入预览</h2>
-          <button id="selectHighConfidence" class="text-button">只选高置信</button>
+          <h2 id="previewTitle">Fill Preview</h2>
+          <button id="selectHighConfidence" class="text-button">High confidence only</button>
         </div>
         <div id="previewList" class="preview-list"></div>
-        <button id="applyPlan" class="primary wide">填入选中字段</button>
+        <button id="applyPlan" class="primary wide">Fill Selected Fields</button>
       </section>
     </main>
 

@@ -1,3 +1,6 @@
+import { normalizeSettings } from "./defaults.js";
+import { setDocumentLanguage, t } from "./i18n.js";
+
 const logList = document.getElementById("logList");
 const exportLogs = document.getElementById("exportLogs");
 const clearLogs = document.getElementById("clearLogs");
@@ -5,21 +8,32 @@ const clearLogs = document.getElementById("clearLogs");
 document.addEventListener("DOMContentLoaded", render);
 exportLogs.addEventListener("click", exportJson);
 clearLogs.addEventListener("click", clearAll);
+
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local" && changes.autofillLogs) {
+  if (areaName === "local" && (changes.autofillLogs || changes.settings)) {
     render();
   }
 });
 
 async function render() {
-  const { autofillLogs } = await chrome.storage.local.get("autofillLogs");
+  const { autofillLogs, settings } = await chrome.storage.local.get(["autofillLogs", "settings"]);
+  const mergedSettings = normalizeSettings(settings);
+  const lang = mergedSettings.uiLanguage;
   const logs = Array.isArray(autofillLogs) ? autofillLogs : [];
+
+  setDocumentLanguage(lang);
+  document.title = t(lang, "logsTitle");
+  document.getElementById("logsTitle").textContent = t(lang, "logsTitle");
+  document.getElementById("logsDescription").textContent = t(lang, "logsDescription");
+  exportLogs.textContent = t(lang, "exportJson");
+  clearLogs.textContent = t(lang, "clearLogs");
+
   logList.textContent = "";
 
   if (!logs.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
-    empty.textContent = "还没有日志。生成一次填表方案后，这里会显示请求结果、字段摘要和 token 用量。";
+    empty.textContent = t(lang, "noLogsYet");
     logList.append(empty);
     return;
   }
@@ -30,15 +44,15 @@ async function render() {
     detail.open = index === 0;
 
     const summary = document.createElement("summary");
-    summary.textContent = `${formatTime(log.timestamp)} · ${log.tab?.title || "Untitled"}`;
+    summary.textContent = `${formatTime(log.timestamp)} - ${log.tab?.title || t(lang, "untitled")}`;
 
     const meta = document.createElement("div");
     meta.className = "meta";
     meta.append(
       metaItem("URL", log.tab?.url || ""),
-      metaItem("模型", `${log.model || "-"} / ${log.reasoningEffort || "-"}`),
-      metaItem("字段/建议", `${log.fieldCount || 0} / ${log.actionCount || 0}`),
-      metaItem("Token", formatUsage(log.usage))
+      metaItem(t(lang, "logModel"), `${log.provider || "-"} / ${log.model || "-"} / ${log.reasoningEffort || "-"}`),
+      metaItem(t(lang, "logFieldActions"), `${log.fieldCount || 0} / ${log.actionCount || 0}`),
+      metaItem(t(lang, "tokenUsage"), formatUsage(log.usage, lang))
     );
 
     const pre = document.createElement("pre");
@@ -74,14 +88,14 @@ function metaItem(label, value) {
   return span;
 }
 
-function formatUsage(usage) {
+function formatUsage(usage, lang) {
   if (!usage) {
     return "-";
   }
   const input = usage.input_tokens ?? usage.prompt_tokens ?? 0;
   const output = usage.output_tokens ?? usage.completion_tokens ?? 0;
   const total = usage.total_tokens ?? input + output;
-  return `input ${input} / output ${output} / total ${total}`;
+  return t(lang, "usageFormat", { input, output, total });
 }
 
 function formatTime(value) {

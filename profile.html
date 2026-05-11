@@ -1,32 +1,37 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LLM 自动填表配置</title>
+    <title>LLM Smart Autofill Settings</title>
     <link rel="stylesheet" href="profile.css">
   </head>
   <body>
     <main class="page">
       <header>
-        <h1>LLM 自动填表配置</h1>
-        <p>资料会保存在 Chrome 本地扩展存储中，生成填表方案时发送给 OpenAI API。</p>
+        <h1 id="pageTitle">LLM Smart Autofill Settings</h1>
+        <p id="pageDescription">Your data is stored in Chrome local extension storage.</p>
       </header>
 
       <form id="settingsForm">
         <section>
-          <h2>模型与 API</h2>
+          <h2 id="providerApiTitle">Provider and API</h2>
           <div class="grid two">
             <label>
-              <span>OpenAI API Key</span>
-              <input id="apiKey" type="password" autocomplete="off" placeholder="sk-...">
+              <span id="providerLabel">API provider</span>
+              <select id="provider">
+                <option value="openai">OpenAI</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="anthropic">Anthropic Claude</option>
+              </select>
             </label>
             <label>
-              <span>模型</span>
+              <span id="modelLabel">Model</span>
               <input id="model" type="text" placeholder="gpt-5.4">
             </label>
             <label>
-              <span>推理强度</span>
+              <span id="reasoningLabel">Reasoning effort</span>
               <select id="reasoningEffort">
                 <option value="low">low</option>
                 <option value="medium">medium</option>
@@ -34,68 +39,100 @@
                 <option value="xhigh">xhigh</option>
               </select>
             </label>
+            <label>
+              <span id="uiLanguageLabel">Extension language</span>
+              <select id="uiLanguage">
+                <option value="zh-CN">中文</option>
+                <option value="en">English</option>
+                <option value="ja">日本語</option>
+              </select>
+            </label>
           </div>
+          <p id="providerHelp" class="helper"></p>
+          <p id="modelHint" class="helper"></p>
           <label class="checkbox">
             <input id="includeScreenshot" type="checkbox">
-            <span>生成方案时包含页面截图和字段编号</span>
+            <span id="includeScreenshotLabel">Include screenshots</span>
           </label>
         </section>
 
         <section>
-          <h2>常用个人信息</h2>
+          <h2 id="apiKeysTitle">API keys</h2>
           <div class="grid two">
-            <label><span>姓名（英文）</span><input id="fullNameEnglish" type="text"></label>
-            <label><span>姓名（中文）</span><input id="fullNameChinese" type="text"></label>
-            <label><span>姓名（ひらがな）</span><input id="fullNameHiragana" type="text"></label>
-            <label><span>姓名（カタカナ）</span><input id="fullNameKatakana" type="text"></label>
-            <label><span>通用姓名字段</span><input id="fullName" type="text"></label>
-            <label><span>出生日期</span><input id="birthDate" type="text"></label>
-            <label><span>性别</span><input id="gender" type="text"></label>
-            <label><span>国籍</span><input id="nationality" type="text"></label>
-            <label><span>居住地</span><input id="residence" type="text"></label>
-            <label><span>邮箱</span><input id="email" type="email"></label>
-            <label><span>邮箱（个人）</span><input id="personalEmail" type="email"></label>
-            <label><span>邮箱（学校）</span><input id="schoolEmail" type="email"></label>
-            <label><span>电话</span><input id="phone" type="tel"></label>
-            <label><span>当前城市</span><input id="city" type="text"></label>
-            <label><span>国家/地区</span><input id="country" type="text"></label>
-            <label><span>邮编</span><input id="postalCode" type="text"></label>
+            <label>
+              <span id="openaiKeyLabel">OpenAI API key</span>
+              <input id="apiKeyOpenAI" type="password" autocomplete="off" placeholder="sk-...">
+            </label>
+            <label>
+              <span id="openrouterKeyLabel">OpenRouter API key</span>
+              <input id="apiKeyOpenRouter" type="password" autocomplete="off" placeholder="sk-or-v1-...">
+            </label>
+            <label>
+              <span id="geminiKeyLabel">Gemini API key</span>
+              <input id="apiKeyGemini" type="password" autocomplete="off" placeholder="AIza...">
+            </label>
+            <label>
+              <span id="anthropicKeyLabel">Anthropic API key</span>
+              <input id="apiKeyAnthropic" type="password" autocomplete="off" placeholder="sk-ant-...">
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2 id="personalInfoTitle">Personal information</h2>
+          <div class="grid two">
+            <label><span id="fullNameEnglishLabel">Name (English)</span><input id="fullNameEnglish" type="text"></label>
+            <label><span id="fullNameChineseLabel">Name (Chinese)</span><input id="fullNameChinese" type="text"></label>
+            <label><span id="fullNameHiraganaLabel">Name (Hiragana)</span><input id="fullNameHiragana" type="text"></label>
+            <label><span id="fullNameKatakanaLabel">Name (Katakana)</span><input id="fullNameKatakana" type="text"></label>
+            <label><span id="fullNameLabel">General name field</span><input id="fullName" type="text"></label>
+            <label><span id="birthDateLabel">Birth date</span><input id="birthDate" type="text"></label>
+            <label><span id="genderLabel">Gender</span><input id="gender" type="text"></label>
+            <label><span id="nationalityLabel">Nationality</span><input id="nationality" type="text"></label>
+            <label><span id="residenceLabel">Residence</span><input id="residence" type="text"></label>
+            <label><span id="emailLabel">Email</span><input id="email" type="email"></label>
+            <label><span id="personalEmailLabel">Personal email</span><input id="personalEmail" type="email"></label>
+            <label><span id="schoolEmailLabel">School email</span><input id="schoolEmail" type="email"></label>
+            <label><span id="phoneLabel">Phone</span><input id="phone" type="tel"></label>
+            <label><span id="cityLabel">Current city</span><input id="city" type="text"></label>
+            <label><span id="countryLabel">Country / region</span><input id="country" type="text"></label>
+            <label><span id="postalCodeLabel">Postal code</span><input id="postalCode" type="text"></label>
           </div>
           <label>
-            <span>详细地址</span>
+            <span id="addressLabel">Address</span>
             <textarea id="address" rows="2"></textarea>
           </label>
         </section>
 
         <section>
-          <h2>求职信息</h2>
+          <h2 id="jobInfoTitle">Job application information</h2>
           <div class="grid two">
-            <label><span>目标职位</span><input id="targetRole" type="text"></label>
-            <label><span>可入职时间</span><input id="availability" type="text"></label>
-            <label><span>期望工作地点</span><input id="preferredLocation" type="text"></label>
-            <label><span>签证/工作许可</span><input id="workAuthorization" type="text"></label>
+            <label><span id="targetRoleLabel">Target role</span><input id="targetRole" type="text"></label>
+            <label><span id="availabilityLabel">Availability</span><input id="availability" type="text"></label>
+            <label><span id="preferredLocationLabel">Preferred location</span><input id="preferredLocation" type="text"></label>
+            <label><span id="workAuthorizationLabel">Visa / work authorization</span><input id="workAuthorization" type="text"></label>
           </div>
           <label>
-            <span>教育经历</span>
+            <span id="educationLabel">Education</span>
             <textarea id="education" rows="4"></textarea>
           </label>
           <label>
-            <span>工作经历</span>
+            <span id="workExperienceLabel">Work experience</span>
             <textarea id="workExperience" rows="6"></textarea>
           </label>
           <label>
-            <span>技能</span>
+            <span id="skillsLabel">Skills</span>
             <textarea id="skills" rows="3"></textarea>
           </label>
           <label>
-            <span>简历全文 / 补充资料</span>
+            <span id="resumeTextLabel">Resume text / extra details</span>
             <textarea id="resumeText" rows="10"></textarea>
           </label>
         </section>
 
         <footer>
-          <button type="button" id="loadDefaultProfile" class="secondary">载入我的资料</button>
-          <button type="submit" class="primary">保存配置</button>
+          <button type="button" id="loadDefaultProfile" class="secondary">Load my profile</button>
+          <button type="submit" class="primary">Save settings</button>
           <span id="saveState"></span>
         </footer>
       </form>

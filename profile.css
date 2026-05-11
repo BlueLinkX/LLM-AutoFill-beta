@@ -43,6 +43,11 @@ p {
   color: #667085;
 }
 
+.helper {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
 section {
   margin-bottom: 16px;
   padding: 22px;
